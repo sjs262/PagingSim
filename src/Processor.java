@@ -2,17 +2,17 @@ public class Processor {
     public static int programCounter = 0;
     public static final int[] mainMemory = new int[256];
 
-    private static boolean RegDst;
-    private static boolean Jump;
-    private static boolean Branch;
-    private static boolean MemRead;
-    private static boolean MemtoReg;
-    private static int ALUOp;
-    private static boolean MemWrite;
-    private static boolean ALUSrc;
-    private static boolean RegWrite;
+    public static boolean RegDst;
+    public static boolean Jump;
+    public static boolean Branch;
+    public static boolean MemRead;
+    public static boolean MemtoReg;
+    public static int ALUOp;
+    public static boolean MemWrite;
+    public static boolean ALUSrc;
+    public static boolean RegWrite;
 
-    private static int ALUControl;
+    public static int ALUControl;
 
     public static final int[] registers = new int[16];
 
@@ -22,17 +22,6 @@ public class Processor {
 
         // Establish control signals based on the opcode of the instruction
         control(instruction.getRange(31, 26));
-
-//        System.out.println("Retrieved control signals:" +
-//                "\n\tRegDst: " + RegDst +
-//                "\n\tJump: " + Jump +
-//                "\n\tBranch: " + Branch +
-//                "\n\tMemRead: " + MemRead +
-//                "\n\tMemtoReg: " + MemtoReg +
-//                "\n\tALUOp: " + ALUOp +
-//                "\n\tMemWrite: " + MemWrite +
-//                "\n\tALUSrc: " + ALUSrc +
-//                "\n\tRegWrite: " + RegWrite);
 
         // Registers to read from and write to
         // Read Register 1 <- Instruction [25:21]
@@ -63,7 +52,7 @@ public class Processor {
 
         // Feed address and write data into the data memory, then work the data memory
         int DMReadData = 0;
-        int physicalAddress = process.pageTable.getMapping(ALUResult);
+        int physicalAddress = process.getMapping(ALUResult);
         if (MemRead) DMReadData = mainMemory[physicalAddress];
         if (MemWrite) mainMemory[physicalAddress] = readData2;
 
