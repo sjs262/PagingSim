@@ -1,50 +1,48 @@
+import java.util.Arrays;
+
 public class PageTable {
-    final private PageTableEntry[] entries = new PageTableEntry[(int) Math.pow(2, 26)];
-
-    public void setMapping(int virtualAddress, int physicalPageNumber) {
-        int index = virtualAddress >> 6;
-        entries[index] = new PageTableEntry(physicalPageNumber);
+    final private int numEntries = (int) Math.pow(2, MemoryManager.VIRTUAL_SPACE - MemoryManager.OFFSET);
+    
+    private final boolean[] valid = new boolean[numEntries];
+    private final int[] physPages = new int[numEntries];
+    
+    public PageTable() {
+        Arrays.fill(physPages, -1);
     }
 
-    public int getMapping(int virtualAddress) {
-        int pageOffset = virtualAddress % (1 << 6);
-        int index = virtualAddress >>> 6;
-        return (entries[index].getMapping() << 6) + pageOffset;
+    /**
+     * @param virtualPage The virtual page number to be mapped from.
+     * @param physicalPage The physical frame number to be mapped to.
+     */
+    public void setMapping(int virtualPage, int physicalPage) {
+        physPages[virtualPage] = physicalPage;
+        
+        System.out.println("setting mapping: " + virtualPage + "-->" + physPages[virtualPage]);
     }
 
-    private class PageTableEntry {
-        private boolean valid; // whether the frame is present in main memory
-        private boolean dirty; // whether the frame is dirty
-        private final int physicalPageNumber; // the mapping from the virtual page number
+    /**
+     * @param virtualPage The virtual page number to be mapped from.
+     * @return The physical frame number mapped from the specified virtual page number.
+     */
+    public int getMapping(int virtualPage) {
+        System.out.println("getting mapping: " + virtualPage + "-->" + physPages[virtualPage]);
+        
+        return physPages[virtualPage];
+    }
 
-        public PageTableEntry(int physicalPageNumber) {
-            valid = true;
-            dirty = false;
-            this.physicalPageNumber = physicalPageNumber;
-        }
+    /**
+     * @param virtualPage The virtual page number to be returned the validity of.
+     * @return Whether the physical page frame mapped from the specified virtual page number resides in main memory.
+     */
+    public boolean isValid(int virtualPage) {
+        return valid[virtualPage];
+    }
 
-        public boolean isValid() {
-            return valid;
-        }
-        public void setValid() {
-            valid = true;
-        }
-        public void setInvalid() {
-            valid = false;
-        }
-
-        public boolean isDirty() {
-            return dirty;
-        }
-        public void setDirty() {
-            dirty = true;
-        }
-        public void setClean() {
-            dirty = false;
-        }
-
-        public int getMapping() {
-            return physicalPageNumber;
-        }
+    /**
+     * @param virtualPage The virtual page number to be set the validity of.
+     * @param validity Whether the physical page frame mapped from the specified virtual page number resides in main memory.
+     */
+    public void setValid(int virtualPage, boolean validity) {
+        valid[virtualPage] = validity;
     }
 }

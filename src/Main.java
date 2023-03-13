@@ -5,25 +5,66 @@ public class Main {
     
     public static void main(String[] args) {
         Process mainProcess = new Process();
-
-        mainProcess.setMapping(5, 2);
-        mainProcess.setMapping(7, 3);
-        Processor.mainMemory[mainProcess.getMapping(5)] = 1;
-        Processor.mainMemory[mainProcess.getMapping(7)] = 2;
-        Processor.registers[1] = 5;
-        Processor.registers[3] = 6;
-        mainProcess.instrMemory = new int[] {
-                0b101011_00001_00000_0000000000000001, // SW reg1 reg0 0 --> store the word (0) in reg0 into the address stored by reg1 (6)
-                0b100011_00001_00000_0000000000000000, // LW reg1 reg0 0 --> load the word (1) addressed by reg1 (5) into reg0
-                0b100011_00001_00000_0000000000000010, // LW reg1 reg0 2 --> load the word (2) addressed by reg1 + 2 (7) into reg0
-                0b101011_00001_00000_0000000000000001, // SW reg1 reg0 0 --> store the word (2) in reg0 into the address stored by reg1 + 1 (6)
-                0b100011_00001_00000_0000000000000000, // LW reg1 reg0 0 --> load the word (1) addressed by reg1 (5) into reg0
-                0b100011_00001_00000_0000000000000001, // LW reg1 reg0 0 --> load the word (2) addressed by reg1 + 1 (6) into reg0
-                0b100011_00001_00000_0000000000000011, // LW reg1 reg0 0 --> load the word (0) addressed by reg1 + 3 (8) into reg0
-                0b000010_00000000000000000000000000 // J 0 --> Jump to the first program instruction
+        
+        MemoryManager.allocate(mainProcess, 5);
+        MemoryManager.setCurrentProcess(mainProcess);
+        
+        MemoryManager.setContent(20, 6);
+        MemoryManager.setContent(21, 2);
+        MemoryManager.setContent(22, 0);
+        MemoryManager.setContent(23, 3);
+        
+        /*
+         $zero: 0 - constant zero
+         $at: 1 - assembler temporary
+         $v0-$v1: 2-3 - values for function results and expression evaluation
+         $a0-$a3: 4-7 - arguments
+         $t0-$t7: 8-15 - temporaries
+         $s0-$s7: 16-23 - saved temporaries
+         $t8-$t9: 24-25 - temporaries
+         $k0-$k1: 26-27 - reserved for OS kernel
+         $gp: 28 - global pointer
+         $sp: 29 - stack pointer
+         $fp: 30 - frame pointer
+         $ra: 31 - return address
+         */
+        
+        String[] regNames = {
+            "$zero",
+            "$at",
+            "$v0", "$v1",
+            "$a0", "$a1", "$a2", "$a3",
+            "$t0", "$t1", "$t2", "$t3", "$t4", "$t5", "$t6", "$t7",
+            "$s0", "$s1", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7",
+            "$t8", "$t9",
+            "$k0", "$k1",
+            "$gp",
+            "$sp",
+            "$fp", 
+            "$ra"
         };
         
-        
+        final int 
+            zero = 0,
+            at = 1,
+            v0 = 2, v1 = 3,
+            a0 = 4, a1 = 5, a2 = 6, a3 = 7,
+            t0 = 8, t1 = 9, t2 = 10, t3 = 11, t4 = 12, t5 = 13, t6 = 14, t7 = 15,
+            s0 = 16, s1 = 17, s2 = 18, s3 = 19, s4 = 20, s5 = 21, s6 = 22, s7 = 23,
+            t8 = 24, t9 = 25,
+            k0 = 26, k1 = 27,
+            gp = 28, sp = 29, fp = 30, ra = 31;
+
+        Processor.registers[0b00010] = 214;
+        Processor.registers[0b00101] = 0b0101;
+        mainProcess.instrMemory = new Operation[] {
+            new Operation(Instruction.ANDI, zero, a1, 10),  //$a1 = $zero | 10
+            new Operation(Instruction.LW, zero, v1, 20),    //$v1 = M[0 + 20]
+            new Operation(Instruction.SW, v1, v0, 15),      //M[6 + 15] = $v0
+            new Operation(Instruction.LW, zero, v1, 21),    //$v1 = M[0 + 21]
+            new Operation(Instruction.BEQ, v0, v1, -4)      //if 214 == 214, PC = PC + 1 - 4
+        };
+  
         UIManager.put("Label.foreground", Color.WHITE);
         UIManager.put("Panel.background", Color.BLACK);
         JFrame frame = new JFrame("Processor Monitor") {
@@ -37,46 +78,13 @@ public class Main {
                 
                 // Datapath Chart
                 gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 2;
-                JPanel datapath   = new JPanel() {
-                    private final Image datapathChart;
-                    {
-                        setLayout(null);
-                        datapathChart = new ImageIcon(Toolkit.getDefaultToolkit().getImage("datapath.png")).getImage();
-                        setPreferredSize(new Dimension(datapathChart.getWidth(this), datapathChart.getHeight(this)));
-                    }
-                    @Override
-                    public void paintComponent(Graphics g) { // Override the paintComponent method to paint the datapath as background
-                        super.paintComponent(g);
-                        g.drawImage(datapathChart, 0, 0, this);
-                    }
-                }; add(datapath, gbc);
-                JLabel RegDst     = new JLabel(Boolean.toString(Processor.RegDst    )); datapath.add(RegDst    );
-                JLabel Jump       = new JLabel(Boolean.toString(Processor.Jump      )); datapath.add(Jump      );
-                JLabel Branch     = new JLabel(Boolean.toString(Processor.Branch    )); datapath.add(Branch    );
-                JLabel MemRead    = new JLabel(Boolean.toString(Processor.MemRead   )); datapath.add(MemRead   );
-                JLabel MemtoReg   = new JLabel(Boolean.toString(Processor.MemtoReg  )); datapath.add(MemtoReg  );
-                JLabel ALUOp      = new JLabel(Integer.toString(Processor.ALUOp     )); datapath.add(ALUOp     );
-                JLabel MemWrite   = new JLabel(Boolean.toString(Processor.MemWrite  )); datapath.add(MemWrite  );
-                JLabel ALUSrc     = new JLabel(Boolean.toString(Processor.ALUSrc    )); datapath.add(ALUSrc    );
-                JLabel RegWrite   = new JLabel(Boolean.toString(Processor.RegWrite  )); datapath.add(RegWrite  );
-                JLabel ALUControl = new JLabel(Integer.toString(Processor.ALUControl)); datapath.add(ALUControl);
-                RegDst    .setBounds(466, 158, 50, 50);
-                Jump      .setBounds(451, 179, 50, 50);
-                Branch    .setBounds(464, 199, 50, 50);
-                MemRead   .setBounds(486, 218, 50, 50);
-                MemtoReg  .setBounds(490, 237, 50, 50);
-                ALUOp     .setBounds(465, 257, 50, 50);
-                MemWrite  .setBounds(486, 277, 50, 50);
-                ALUSrc    .setBounds(468, 297, 50, 50);
-                RegWrite  .setBounds(478, 319, 50, 50);
-                ALUControl.setBounds(650, 580, 50, 50);
                 
                 // Registers
                 gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
                 JPanel registers = new JPanel(); add(registers, gbc);
                 JLabel[] regLabs = new JLabel[16]; // Need to store these in an array for updating later
                 for (int i = 0; i < 16; i++) {
-                    regLabs[i] = new JLabel("reg" + i + ":  " + Processor.registers[i]);
+                    regLabs[i] = new JLabel(regNames[i] + ":  " + Processor.registers[i]);
                     registers.add(regLabs[i]);
                 }
                 registers.setLayout(new BoxLayout(registers, BoxLayout.Y_AXIS));
@@ -87,7 +95,7 @@ public class Main {
                 add(programCounter, gbc);
                 
                 gbc.gridx = 2; gbc.gridy = 0;
-                JLabel executingInstruction = new JLabel("Executing Instruction:  " + mainProcess.getInstruction(0));
+                JLabel executingInstruction = new JLabel("Executing Instruction:  " + mainProcess.getOperation(0));
                 add(executingInstruction, gbc);
                 
                 // Cycle button
@@ -99,60 +107,17 @@ public class Main {
         
                     // Update register storage labels
                     for (int i = 0; i < 16; i++)
-                        regLabs[i].setText("reg" + i + ":  " + Processor.registers[i]);
+                        regLabs[i].setText(regNames[i] + ":  " + Processor.registers[i]);
         
                     // Update program counter and executing instruction labels
-                    programCounter      .setText("Program Counter:  "       + Processor.programCounter                            );
-                    executingInstruction.setText("Executing Instruction:  " + mainProcess.getInstruction(Processor.programCounter));
-        
-                    // Update control labels
-                    RegDst    .setText(Boolean.toString(Processor.RegDst    ));
-                    Jump      .setText(Boolean.toString(Processor.Jump      ));
-                    Branch    .setText(Boolean.toString(Processor.Branch    ));
-                    MemRead   .setText(Boolean.toString(Processor.MemRead   ));
-                    MemtoReg  .setText(Boolean.toString(Processor.MemtoReg  ));
-                    ALUOp     .setText(Integer.toString(Processor.ALUOp     ));
-                    MemWrite  .setText(Boolean.toString(Processor.MemWrite  ));
-                    ALUSrc    .setText(Boolean.toString(Processor.ALUSrc    ));
-                    RegWrite  .setText(Boolean.toString(Processor.RegWrite  ));
-                    ALUControl.setText(Integer.toString(Processor.ALUControl));
+                    programCounter      .setText("Program Counter:  "       + Processor.PC[0]);
+                    if (Processor.PC[0] < mainProcess.instrMemory.length)
+                        executingInstruction.setText("Executing Instruction:  " + mainProcess.getOperation(Processor.PC[0]));
+                    else executingInstruction.setText("Finished execution.");
                 });
             }
         };
-
         frame.setBounds(750, 0, 1180, 1000);
         frame.setVisible(true);
     }
-
-//    public static void main(String[] args) {
-//        JFrame frame = new JFrame() {
-//            @Override
-//            public void paint(Graphics g) {
-//                super.paint(g);
-//
-//                Image img = null;
-//                try {
-//                    img = ImageIO.read(new File("datapath.png"));
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//
-//                g.drawImage(img, 200, 200, this);
-//            }
-//        };
-//        frame.setVisible(true);
-//        frame.setBounds(750, 0, 1180, 1000);
-//        frame.setLayout(null);
-//
-//
-//        JButton cycle = new JButton("Cycle");
-//        cycle.setBounds(20, 20, 80, 30);
-//        frame.add(cycle);
-//
-//
-//        JLabel label = new JLabel("label");
-//        label.setBounds(20, 60, 80, 30);
-//        frame.add(label);
-//
-//    }
 }
