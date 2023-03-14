@@ -20,10 +20,8 @@ public class MemoryManager {
         int physicalAddress = currentProcess.getMapping(virtualAddress);
         if(allocated[physicalAddress >>> OFFSET] == currentProcess)
             return MAIN_MEMORY[currentProcess.getMapping(virtualAddress)];
-        else {
-            System.out.println("Process is trying to read from non-allocated memory");
-            return 0;
-        }
+        System.out.println("Process is trying to read from non-allocated memory");
+        return -1;
     }
 
     /**
@@ -39,24 +37,22 @@ public class MemoryManager {
     }
 
     /**
-     * @param process The process to allocate memory for.
      * @param virtualPage The page number of the virtual page to enter into the process page table.
      */
-    public static void allocate(Process process, int virtualPage) {
+    public static void allocate(int virtualPage) {
         int physicalPage = getPhysicalPageToAllocate();
         System.out.println("allocating the physical page: " + physicalPage);
-        allocated[physicalPage] = process;
-        process.setMapping(virtualPage, physicalPage);
+        allocated[physicalPage] = currentProcess;
+        currentProcess.setMapping(virtualPage, physicalPage);
     }
 
     /**
-     * @param process The process to free memory from.
      * @param virtualPage The page number of the virtual page to remove the entry from in the process page table.
      */
-    public static void free(Process process, int virtualPage) {
+    public static void free(int virtualPage) {
         setContent(virtualPage, 0);
-        allocated[process.getMapping(virtualPage << OFFSET) >>> OFFSET] = null;
-        process.setMapping(virtualPage, -1);
+        allocated[currentProcess.getMapping(virtualPage << OFFSET) >>> OFFSET] = null;
+        currentProcess.setMapping(virtualPage, -1);
     }
 
     /**

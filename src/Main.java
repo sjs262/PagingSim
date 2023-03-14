@@ -6,9 +6,9 @@ public class Main {
     public static void main(String[] args) {
         Process mainProcess = new Process();
         
-        MemoryManager.allocate(mainProcess, 5);
         MemoryManager.setCurrentProcess(mainProcess);
-        
+    
+        MemoryManager.allocate(5);
         MemoryManager.setContent(20, 6);
         MemoryManager.setContent(21, 2);
         MemoryManager.setContent(22, 0);
@@ -56,13 +56,13 @@ public class Main {
             gp = 28, sp = 29, fp = 30, ra = 31;
 
         Processor.registers[0b00010] = 214;
-        Processor.registers[0b00101] = 0b0101;
+        Processor.registers[0b00101] = 5;
         mainProcess.instrMemory = new Operation[] {
-            new Operation(Instruction.ANDI, zero, a1, 10),  //$a1 = $zero | 10
-            new Operation(Instruction.LW, zero, v1, 20),    //$v1 = M[0 + 20]
-            new Operation(Instruction.SW, v1, v0, 15),      //M[6 + 15] = $v0
-            new Operation(Instruction.LW, zero, v1, 21),    //$v1 = M[0 + 21]
-            new Operation(Instruction.BEQ, v0, v1, -4)      //if 214 == 214, PC = PC + 1 - 4
+            new Operation(Instruction.ORI, zero, a1, 10),  // $a1 = $zero | 10
+            new Operation(Instruction.LW, zero, v1, 20),    // $v1 = M[0 + 20]
+            new Operation(Instruction.SW, v1, v0, 15),      // M[6 + 15] = $v0
+            new Operation(Instruction.LW, zero, v1, 21),    // $v1 = M[0 + 21]
+            new Operation(Instruction.BEQ, v0, v1, -5)      // if 214 == 214, PC = PC + 1 - 4
         };
   
         UIManager.put("Label.foreground", Color.WHITE);
@@ -75,9 +75,6 @@ public class Main {
                 gbc.insets = new Insets(20, 20, 20, 20);
                 gbc.anchor = GridBagConstraints.CENTER;
                 gbc.weightx = 1.0;
-                
-                // Datapath Chart
-                gbc.gridx = 1; gbc.gridy = 1; gbc.gridwidth = 2;
                 
                 // Registers
                 gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
